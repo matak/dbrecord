@@ -1,0 +1,21 @@
+{
+	"name": "matak/dbrecord",
+	"description": "DbRecord used to be ActiveRecord, now it is 5 levels ORM (EntityManager, EntityRepository, Mapper, Entity), it is based on dibi",
+	"keywords": ["dbrecord", "orm", "activerecord", "nette"],
+	"homepage": "https://github.com/matak/dbrecord",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Roman Matena",
+			"email": "info@romanmatena.cz"
+		}
+	],
+	"autoload": {
+		"psr-0": {
+			"dbrecord": ""
+		}
+	},
+	"require": {
+		"nette/nette": "~2.0@rc"
+	}
+}
