@@ -8,7 +8,7 @@
  */
 
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette\Object;
 

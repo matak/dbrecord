@@ -24,7 +24,7 @@
  * @package    DbRecord
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette\Object, 
 		Nette\Forms\Form;

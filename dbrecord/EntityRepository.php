@@ -7,7 +7,7 @@
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 class EntityRepository
 {

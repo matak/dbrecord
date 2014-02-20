@@ -1,11 +1,10 @@
 <?php
 
-namespace System\DbRecord;
+namespace dbrecord;
 
-use DibiEvent;
-use DibiException;
-use Kdyby;
-use Nette;
+use DibiEvent,
+		DibiException,
+		Nette;
 
 
 

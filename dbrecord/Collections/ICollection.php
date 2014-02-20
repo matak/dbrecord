@@ -10,7 +10,7 @@
  * @package    Nette\Collections
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette;
 

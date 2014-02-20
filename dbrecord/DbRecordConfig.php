@@ -6,7 +6,7 @@
  * @license    BSD License
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette\Object;
 

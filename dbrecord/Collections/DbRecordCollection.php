@@ -6,7 +6,7 @@
  * @author Roman Matěna
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 class DbRecordCollection extends LazyCollection implements IObjectContainerToFree
 {

@@ -6,7 +6,7 @@
  * @copyright  Copyright (c) 2009 Roman Sklenář (http://romansklenar.cz)
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 class AssociatedTreeCollection extends AssociatedCollection
 {

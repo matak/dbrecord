@@ -5,7 +5,7 @@
  * @author     Roman Matěna
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 class AssociatedCollection extends DbRecordCollection
 {

@@ -16,7 +16,7 @@
  * @version    0.3
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette\Utils\Strings;
 

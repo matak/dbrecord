@@ -1,6 +1,6 @@
 <?php
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 /**
  * ArrayList with lazy loading.

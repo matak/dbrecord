@@ -1,7 +1,7 @@
 <?php
 
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 
 

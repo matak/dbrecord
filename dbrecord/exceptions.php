@@ -1,6 +1,6 @@
 <?php
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 class Exception extends \Exception
 {

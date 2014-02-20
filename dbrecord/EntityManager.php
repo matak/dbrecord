@@ -7,7 +7,7 @@
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
  */
 
-namespace System\DbRecord;
+namespace dbrecord;
 
 use Nette,
 	System\DbRecord\Connection;
@@ -53,6 +53,7 @@ class EntityManager
 		$className = ltrim($className, "\\");
 
 		if (!isset($this->repositories[$className])) {
+			$metadata = $this->getMetadata($className);
 			$repositoryClass = $metadata->getRepositoryClass();			
 			$this->repositories[$className] = new $repositoryClass($this, $metadata);
 		}
@@ -65,7 +66,23 @@ class EntityManager
 	{
 		$className = ltrim($className, "\\");
 
-		
+		$cache = new Cache($this->context->cacheStorage, str_replace("\\", ".", __NAMESPACE__) . ".dbrecord.metadata");
+
+		$key = $className;
+
+		$metadata = $cache[$key];
+
+		if ($metadata === null) {
+			$metadata = $this->createMetadata($className);
+			$cache->save($key, $metadata);
+		}
+
+		return $metadata;
+	}
+	
+	protected function createMetadata($className)
+	{
+		$metadata = new EntityMetadata;
 		
 		
 		$db = $recordClass::connection();
