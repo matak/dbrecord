@@ -83,9 +83,10 @@ class EntityManager
 	protected function createMetadata($className)
 	{
 		$metadata = new EntityMetadata;
-		
-		
-		$db = $recordClass::connection();
+		echo $className;
+		$r = new $className;
+		dd($r);
+		/*$db = $recordClass::connection();
 		$table = $db->getDatabaseInfo()->getTable($db->translate($recordClass::table()));
 
 		$this->table = $table->getName();
@@ -120,7 +121,7 @@ class EntityManager
 			}
 
 			$this->addColumn($name, $type, $column->getSize() ? $column->getSize() : NULL, $params);
-		}		
+		}*/		
 	}
 
 
