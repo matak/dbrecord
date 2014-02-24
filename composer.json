@@ -11,9 +11,8 @@
 		}
 	],
 	"autoload": {
-		"classmap": ["dbrecord/"],
 		"psr-0": {
-			"dbrecord": ""
+			"dbrecord": "dbrecord/"
 		}
 	},
 	"require": {
