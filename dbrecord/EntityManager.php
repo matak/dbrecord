@@ -10,7 +10,7 @@
 namespace dbrecord;
 
 use Nette,
-	System\DbRecord\Connection;
+	dbrecord\Connection;
 
 class EntityManager
 {
