@@ -42,6 +42,16 @@ class DatabaseLoader
 
 	public function createClasses()
 	{
+		$sql = $this->getConnection();
+		$db = $this->getDatabaseInfo();
+		foreach($db->getTables() as $t) {
+			// table comment?
+			$status = $sql->query("SHOW TABLE STATUS LIKE %s", $t->getName())->fetch();
+			if (isset($status['Comment']) && ($comment = $status['Comment'])) {
+				preg_match("/@Entity\((.*)\)/", $comment, $matches);
+				d($matches);
+			}
+		}
 		
 	}
 
@@ -64,25 +74,16 @@ class DatabaseLoader
 
 	protected function getDatabaseInfo()
 	{
-		if (!isset($this->cache['databaseInfo'][0])) {
-			dd($this->getConnection()->getDatabaseInfo());
-			$this->cache['databaseInfo'][0] = $this->getConnection()->getDatabaseInfo();
+		if (!isset($this->cache['databaseInfo'])) {
+			$this->cache['databaseInfo'] = $this->getConnection()->getDatabaseInfo();
 		}
-		return $this->cache['databaseInfo'][0];
+		return $this->cache['databaseInfo'];
 	}
 
 
 
 
 
-	protected function getTable()
-	{
-		if (!isset($this->cache['databaseInfo']['table'][0])) {
-			$db = $this->getDatabaseInfo();
-			$this->cache['databaseInfo']['table'][0] = $db->getTable($this->getTableName());
-		}
-		return $this->cache['databaseInfo']['table'][0];
-	}
 
 
 
