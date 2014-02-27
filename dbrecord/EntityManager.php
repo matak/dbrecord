@@ -66,13 +66,13 @@ class EntityManager
 	{
 		$className = ltrim($className, "\\");
 
-		$cache = new \Nette\Caching\Cache($this->context->cacheStorage, str_replace("\\", ".", __NAMESPACE__) . ".dbrecord.metadata");
+		$cache = new \Nette\Caching\Cache($this->context->cacheStorage, "dbrecord.metadata");
 
 		$key = $className;
 
 		$metadata = $cache[$key];
 
-		if ($metadata === null) {
+		if ($metadata === NULL) {
 			$metadata = $this->createMetadata($className);
 			$cache->save($key, $metadata);
 		}
@@ -82,13 +82,9 @@ class EntityManager
 	
 	protected function createMetadata($className)
 	{
-		$metadata = new EntityMetadata;
-
-		$reflection = \Nette\Reflection\ClassType::from($className);
-		$r = $reflection->getAnnotations();
-		dump($r);
-		$r = $reflection->getProperties();
-		dd($r);
+		$metadata = new Metadata\EntityMetadata;
+		$metadata->create(Metadata\Annotations::build($className));
+		dd($metadata);
 		/*$db = $recordClass::connection();
 		$table = $db->getDatabaseInfo()->getTable($db->translate($recordClass::table()));
 

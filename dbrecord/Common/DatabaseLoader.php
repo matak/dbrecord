@@ -97,16 +97,22 @@ class DatabaseLoader
 				'table' => $table,
 				'entity' => $entity,
 			);
+			
+			$this->cacheForeignKeys($table);
 		}
 	}
 
 
-
+	protected function cacheForeignKeys($table)			
+	{
+		// not implemented yet
+	}
 
 
 	public function createClasses()
 	{
 		$this->prepareTables();
+		dd($this->cache);
 		// now go through
 		foreach ($this->cache['tables'] as $v) {
 			$this->buildEntityClass($v['className'], $v['table'], $v['entity']);
@@ -226,34 +232,8 @@ class DatabaseLoader
 	{
 		$ret = "";
 
-		/*
-		  if (isset($this->config['associations'])) {
-		  $hasOne = $hasMany = array();
-		  $ret.=" *\n";
-		  foreach ($this->config['associations'] as $key => $association) {
-		  if ($association['type'] == "hasOne") {
-		  $hasOne[] = $key;
-
-		  $ret.=' * @property ' . $association['referenceClass'] . ' $' . $key . "\n";
-		  }
-		  elseif ($association['type'] == "hasMany") {
-		  $hasMany[] = $key;
-
-		  $ret.=' * @property ' . (isset($association['associatedCollection']) ? $association['associatedCollection'] : "AssociatedCollection") . ' $' . $key . "\n";
-		  }
-		  }
-		  $ret.=" *\n";
-		  if (count($hasOne)) {
-		  $ret.=' * @hasOne (' . implode(", ", $hasOne) . ')' . "\n";
-		  }
-		  if (count($hasMany)) {
-		  $ret.=' * @hasMany (' . implode(", ", $hasMany) . ')' . "\n";
-		  }
-		  $ret.=" *\n";
-		  }
-		 */
-
-
+		// not implemented 
+		
 		return $ret;
 	}
 
