@@ -37,9 +37,9 @@ class EntityMetadata
 
 
 
-	public function create($metadata)
+	public function __construct($data)
 	{
-		d($metadata);
+		dd($data);
 	}
 
 }

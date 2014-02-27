@@ -82,9 +82,8 @@ class EntityManager
 	
 	protected function createMetadata($className)
 	{
-		$metadata = new Metadata\EntityMetadata;
-		$metadata->create(Metadata\Annotations::build($className));
-		dd($metadata);
+		$metadata = new Metadata\EntityMetadata(Metadata\Annotations::build($className));
+		dd("finish");
 		/*$db = $recordClass::connection();
 		$table = $db->getDatabaseInfo()->getTable($db->translate($recordClass::table()));
 

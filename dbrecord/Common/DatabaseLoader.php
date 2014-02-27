@@ -112,7 +112,6 @@ class DatabaseLoader
 	public function createClasses()
 	{
 		$this->prepareTables();
-		dd($this->cache);
 		// now go through
 		foreach ($this->cache['tables'] as $v) {
 			$this->buildEntityClass($v['className'], $v['table'], $v['entity']);
@@ -198,9 +197,11 @@ class DatabaseLoader
 
 	protected function generateEntityDescription($table, $entity)
 	{
+		$tableArray = array('name' => $table->getName());
+		
 		$ret = "";
-		$ret .= " * @Entity(" . $this->serializeArray($entity) . ")\n";
-		$ret .= " * @Table(name=\"" . $table->getName() . "\")\n";
+		$ret .= " * @Entity(" . Metadata\Annotations::serializeArray($entity) . ")\n";
+		$ret .= " * @Table(" . Metadata\Annotations::serializeArray($tableArray) . ")\n";
 
 		return $ret;
 	}
@@ -267,14 +268,14 @@ class DatabaseLoader
 		$params = array(
 			'type' => $type = $column->getType(),
 			'size' => $column->getSize(),
-			'nullable' => $column->isNullable() ? "true" : "false",
-			'default' => is_null($default = $column->getDefault()) ? "NULL" : $default,
+			'nullable' => $column->isNullable() ? true : false,
+			'default' => is_null($default = $column->getDefault()) ? NULL : $default,
 		);
 
 		if (in_array($name, $pks)) {
-			$params['primary'] = "true";
+			$params['primary'] = true;
 			if ($column->isAutoincrement()) {
-				$params['autoincrement'] = "true";
+				$params['autoincrement'] = true;
 			}
 		}
 		
@@ -298,7 +299,7 @@ class DatabaseLoader
 				break;
 		}
 
-		return ' * @property ' . $propertyType . ' $' . $name . "	Column(" . $this->serializeArray($params) . ")\n";
+		return ' * @property ' . $propertyType . ' $' . $name . "	Column(" . Metadata\Annotations::serializeArray($params) . ")\n";
 	}
 
 
@@ -330,16 +331,6 @@ class DatabaseLoader
 
 
 
-	protected function serializeArray($array)
-	{
-		$serialized = array();
-		if (count($array)) {
-			foreach ($array as $k => $v) {
-				$serialized[] = $k . "=\"" . $v . "\"";
-			}
-		}
 
-		return implode(",", $serialized);
-	}
 
 }
