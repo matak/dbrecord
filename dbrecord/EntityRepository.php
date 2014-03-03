@@ -12,11 +12,6 @@ namespace dbrecord;
 class EntityRepository
 {
 
-	/** @var string default mapper object */
-	const DEFAULT_MAPPER = '\System\DbRecord\DatabaseMapper';
-
-
-
 	/** @var EntityManager */
 	protected $em;
 
@@ -42,6 +37,33 @@ class EntityRepository
 
 
 
+	/**
+	 * Return all defined behaviors for record.
+	 *
+	 * @return array
+	 */
+	public static function behaviors()
+	{
+		return array(
+			'beforeInsert' => array(
+			),
+			'afterInsert' => array(
+			),
+			'beforeUpdate' => array(
+			),
+			'afterUpdate' => array(
+			),
+			'beforeDelete' => array(
+			),
+			'afterDelete' => array(
+			),
+		);
+	}
+
+
+
+
+
 	public function getConnection()
 	{
 		return $this->em->getConnection();
@@ -54,8 +76,10 @@ class EntityRepository
 	public function getMapper()
 	{
 		if (!$this->mapper) {
-			
+			$mapperClass = $this->getMetadata()->getMapperClass() ? : "\dbrecord\Mappers\DatabaseMapper";
+			$this->mapper = new $mapperClass;
 		}
+
 		return $this->mapper;
 	}
 

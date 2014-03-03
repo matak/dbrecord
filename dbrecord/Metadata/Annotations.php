@@ -40,68 +40,23 @@ class Annotations
 				$table = $value[0];
 				$ret['table'] = (string) $table->name;
 			}
-			elseif ($key == "property") {
-				foreach ($value as $property) {
-					$p = static::buildProperty($property);
-					d($p);
-					if (!$p) {
-						continue;
-					}
-
-					if ($p['type'] == "Column") {
-						$ret['columns'][$p['name']] = $p['definition'];
-					}
-					elseif (in_array($p['type'], array("AssociationHasMany", "AssociationHasOne"))) {
-						$ret['associations'][$p['name']] = $p['definition'];
-					}
+			elseif ($key == "Column") {
+				foreach ($value as $column) {
+					$name = $column->name;
+					unset($column->name);
+					$ret['columns'][$name] = (array) $column;
+				}
+			}
+			elseif (in_array($key, array("AssociationHasOne", "AssociationHasMany"))) {
+				foreach ($value as $association) {
+					$name = $association->name;
+					unset($association->name);
+					$ret['associations'][$name] = (array) $association;
 				}
 			}
 		}
 
 		return $ret;
-	}
-
-
-
-
-
-	protected static function buildProperty($property)
-	{
-		$ret = array();
-		preg_match("/([^\s]+)[\s]+([^\s]+)[\s]+(.*)/", $property, $matches);
-		d($matches);
-		// aby to patrilo do entity property tak musi byt zadan treti blok, ktery zacina specificky
-		if (isset($matches[3]) && preg_match("/^\b(Column|AssociationHasOne|AssociationHasMany)\b\((.*)\)/", $matches[3], $matches2)) {
-			if (isset($matches2[2])) {
-				$ret['name'] = ltrim($matches[2], "$");
-				$ret['type'] = $type = $matches2[1];
-
-				$definition = static::unserializeArray($matches2[2]);
-
-				// pri teto asociaci nedavame referenceClass do definice
-				if ($type == "AssociationHasOne") {
-					$definition['referenceClass'] = $matches[1];
-				}
-				elseif ($type == "AssociationHasMany") {
-					$definition['associatedCollectionClass'] = $matches[1];
-				}
-
-				$ret['definition'] = $definition;
-				return $ret;
-			}
-		}
-
-		return false;
-	}
-
-
-
-
-
-	protected static function unserializeArray($string)
-	{
-		$string = "{" . $string . "}";
-		return \Nette\Utils\Neon::decode($string);
 	}
 
 

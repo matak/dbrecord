@@ -124,18 +124,6 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 
 
 
-	/**
-	 * Get DibiDataSource object.
-	 *
-	 * @return DibiDataSource
-	 */
-	public function toDataSource() 
-	{
-		if (!$this->fluent) {
-			throw new Exception('Fluent is not set');
-		}
-		return $this->fluent->toDataSource();
-	}
 
 
 

@@ -29,7 +29,7 @@ namespace dbrecord;
 use Nette\Object, 
 		Nette\Forms\Form;
 
-class DbValidator extends Object implements \ArrayAccess
+class EntityValidator extends Object implements \ArrayAccess
 {
 
 	/**#@+ operation name */
@@ -84,69 +84,10 @@ class DbValidator extends Object implements \ArrayAccess
 	const RANGE = ':range';
 	*/
 
-	public function  __construct($recordClass)
-	{
-		//$this->autoDetect($recordClass);
-	}
-
-	public function autoDetect($recordClass)
-	{
-		throw new \Nette\NotImplementedException;
-
-		// autodetect je v podstate nemožný,
-		// v případě mandatory ještě to neznamená, že není možné zadat prázdnou hotnodu jako ""
-		// stejně tak v případě že sloupec není nullable, by neprošla ani hodnota ""
-		// což není pravda i prázdné hodnoty mohou být řešením
-		//
-		//
-		// podmínky jsou diskutabilní, nicméně lze uvažovat o tom,
-		// že mandatory hodnota znamená, že ani prázdná hodnota nemá smysl
-		//
-		// u not nullable hodnot je potřeba testovat is_null
-
-		$translator = $this->getTranslator();
-		if ($translator) {
-
-			$filledmsg = $translator->_('v/filled', 1,
-				array(
-					'{__ITEM__}' => "%s",
-				)
-			);
-
-			$nullablemsg = $translator->_('v/filled', 1,
-				array(
-					'{__ITEM__}' => "%s",
-				)
-			);
-		} else {
-
-			$filledmsg = "Value (%s) is mandatory, must be filled!";
-			$nullablemsg = "Value (%s) can not be NULL!";
-
-		}
-
-		// mandatory must be filled
-		$columns = $recordClass::config()->getColumns();
-		foreach ($columns as $name => $column) {
-
-			if ($column['mandatory']) {
-
-				$this->addColumn($name)
-					->addRule(self::FILLED, $filledmsg);
-
-			} elseif (!$column['nullable']) {
-
-				$this->addColumn($name)
-					->addRule(~'is_null', $nullablemsg);
-
-			}
-		}
-
-	}
 
 	public function addColumn($name, $column = NULL)
 	{
-		$this->columns[$name] = isset($column) ? $column : new DbValidatorColumn($name);
+		$this->columns[$name] = isset($column) ? $column : new EntityValidatorColumn($name);
 		return $this->columns[$name];
 	}
 
@@ -293,7 +234,7 @@ class DbValidator extends Object implements \ArrayAccess
 		foreach ($this->getColumns() as $column) {
 			foreach ($column->getRules() as $rule)  {
 				if (!$validationScope || in_array($validationScope, $rule->validationScope)) continue;
-				if ($rule->type === DbValidatorRule::VALIDATOR && isset($form[$rule->column->name])) {
+				if ($rule->type === EntityValidatorRule::VALIDATOR && isset($form[$rule->column->name])) {
 					$form[$rule->column->name]->addRule($rule->operation, $rule->message, $rule->arg);
 				}
 			}
@@ -318,7 +259,7 @@ class DbValidator extends Object implements \ArrayAccess
 		$value = $record->{$column->name};
 		$value = (string) $value;
 		foreach ((is_array($arg) ? $arg : array($arg)) as $item) {
-			if ($item instanceof DbValidatorColumn) {
+			if ($item instanceof EntityValidatorColumn) {
 				
 				if (!$record) {
 					throw new \LogicException("Equal validation can´t be done, because of missing record.");
@@ -353,7 +294,7 @@ class DbValidator extends Object implements \ArrayAccess
 
 	/**
 	 * Valid validator: is control valid?
-	 * @param  DbValidatorColumn $column
+	 * @param  EntityValidatorColumn $column
 	 * @return bool
 	 */
 	public static function validateValid($column)
@@ -555,13 +496,13 @@ class DbValidator extends Object implements \ArrayAccess
 
 
 /**
- * DbValidatorColumn represents column of database model (DbRecord) also a FormControl in Nette forms.
+ * EntityValidatorColumn represents column of database model (DbRecord) also a FormControl in Nette forms.
  *
  * @author     Roman MatÄ›na inspired by David Grudl
  * @copyright  Copyright (c) 2010 Roman MatÄ›na
  * @package    DbRecord
  */
-class DbValidatorColumn extends Object
+class EntityValidatorColumn extends Object
 {
 
 	/** @var string column name */
@@ -579,7 +520,7 @@ class DbValidatorColumn extends Object
 	public function __construct($name)
 	{
 		$this->name = $name;
-		$this->rules = new DbValidatorRules($this);
+		$this->rules = new EntityValidatorRules($this);
 	}
 
 	/**
@@ -587,7 +528,7 @@ class DbValidatorColumn extends Object
 	 * @param  mixed      rule type
 	 * @param  string     message to display for invalid data
 	 * @param  mixed      optional rule arguments
-	 * @return DbValidatorColumn  provides a fluent interface
+	 * @return EntityValidatorColumn  provides a fluent interface
 	 */
 	public function addRule($operation, $message = NULL, $arg = NULL, $validationScope = array())
 	{
@@ -611,12 +552,12 @@ class DbValidatorColumn extends Object
 
 	/**
 	 * Adds a validation condition based on another control a returns new branch.
-	 * @param  DbValidatorColumn validator column
+	 * @param  EntityValidatorColumn validator column
 	 * @param  mixed      condition type
 	 * @param  mixed      optional condition arguments
 	 * @return Rules      new branch
 	 */
-	public function addConditionOn(DbValidatorColumn $column, $operation, $value = NULL)
+	public function addConditionOn(EntityValidatorColumn $column, $operation, $value = NULL)
 	{
 		return $this->rules->addConditionOn($column, $operation, $value);
 	}
@@ -671,14 +612,14 @@ class DbValidatorColumn extends Object
 
 
 
-final class DbValidatorRules extends Object implements \IteratorAggregate
+final class EntityValidatorRules extends Object implements \IteratorAggregate
 {
 	/** @ignore internal */
 	const VALIDATE_PREFIX = 'validate';
 
 	/** @var array */
 	public static $defaultMessages = array(
-		DbValidator::RANGE => 'VALIDATION_RANGE %name %value',
+		EntityValidator::RANGE => 'VALIDATION_RANGE %name %value',
 	);
 
 	/** @var array of Rule */
@@ -707,13 +648,13 @@ final class DbValidatorRules extends Object implements \IteratorAggregate
 	 */
 	public function addRule($operation, $message = NULL, $arg = NULL, $validationScope = array())
 	{
-		$rule = new DbValidatorRule;
+		$rule = new EntityValidatorRule;
 		$rule->column = $this->column;
 		$rule->operation = $operation;
 		$rule->validationScope = $validationScope;
 		$this->adjustOperation($rule);
 		$rule->arg = $arg;
-		$rule->type = DbValidatorRule::VALIDATOR;
+		$rule->type = EntityValidatorRule::VALIDATOR;
 		if ($message === NULL && isset(self::$defaultMessages[$rule->operation])) {
 			$rule->message = self::$defaultMessages[$rule->operation];
 		} else {
@@ -744,15 +685,15 @@ final class DbValidatorRules extends Object implements \IteratorAggregate
 	 * @param  mixed      optional condition arguments
 	 * @return Rules      new branch
 	 */
-	public function addConditionOn(DbValidatorColumn $column, $operation, $arg = NULL, $validationScope = array())
+	public function addConditionOn(EntityValidatorColumn $column, $operation, $arg = NULL, $validationScope = array())
 	{
-		$rule = new DbValidatorRule;
+		$rule = new EntityValidatorRule;
 		$rule->column = $column;
 		$rule->operation = $operation;
 		$rule->validationScope = $validationScope;
 		$this->adjustOperation($rule);
 		$rule->arg = $arg;
-		$rule->type = DbValidatorRule::CONDITION;
+		$rule->type = EntityValidatorRule::CONDITION;
 		$rule->subRules = new self($this->column);
 		$rule->subRules->parent = $this;
 
@@ -779,11 +720,11 @@ final class DbValidatorRules extends Object implements \IteratorAggregate
 			$success = ($rule->isNegative xor $this->getCallback($rule)->invoke($rule->column, $record, $rule->arg)); // drasticky narocne na vykon
 			//$success = ($rule->isNegative xor call_user_func($rule->callback, $record->{$rule->column->name}, $rule->arg, $record)); // pozor tento Ĺ™Ăˇdek je kriticky nĂˇroÄŤnĂ˝ na vĂ˝kon!
 
-			if ($rule->type === DbValidatorRule::CONDITION && $success) {
+			if ($rule->type === EntityValidatorRule::CONDITION && $success) {
 				$success = $rule->subRules->validate($record, $onlyCheck);
 				$valid = $valid && $success;
 
-			} elseif ($rule->type === DbValidatorRule::VALIDATOR && !$success) {
+			} elseif ($rule->type === EntityValidatorRule::VALIDATOR && !$success) {
 				if ($onlyCheck) {
 					return FALSE;
 				}
@@ -822,7 +763,7 @@ final class DbValidatorRules extends Object implements \IteratorAggregate
 	{
 		$op = $rule->operation;
 		if (is_string($op) && strncmp($op, ':', 1) === 0) {
-			return callback(__NAMESPACE__."\DbValidator", self::VALIDATE_PREFIX . ucfirst(ltrim($op, ':')));
+			return callback(__NAMESPACE__."\EntityValidator", self::VALIDATE_PREFIX . ucfirst(ltrim($op, ':')));
 
 		} else {
 			return callback($op);
@@ -860,7 +801,7 @@ final class DbValidatorRules extends Object implements \IteratorAggregate
  * @copyright  Copyright (c) 2010 Roman MatÄ›na
  * @package    DbRecord
  */
-final class DbValidatorRule extends Object
+final class EntityValidatorRule extends Object
 {
 	/** type */
 	const CONDITION = 1;

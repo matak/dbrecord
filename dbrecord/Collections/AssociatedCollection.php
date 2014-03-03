@@ -24,7 +24,7 @@ class AssociatedCollection extends DbRecordCollection
 	 * Object constructor.
 	 *
 	 * @param HasManyAssociation Typ asociace mozne jsou [ TODO ]
-	 * @param \System\DbRecord Vlastnik, ke ktere kolekce patri.
+	 * @param \dbrecord\Entity Vlastnik, ke ktere kolekce patri.
 	 */
 	public function __construct(HasManyAssociation $association, DbRecord $owner)
 	{

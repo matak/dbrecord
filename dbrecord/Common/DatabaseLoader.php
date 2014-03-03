@@ -80,33 +80,40 @@ class DatabaseLoader
 					$matches = explode(",", $matches[1]);
 					foreach ($matches as $value) {
 						$v = explode("=", $value);
-						$v1 = trim($v[1], '"\'');
-						if ($v[0] == "name") {
+						$v0 = trim($v[0]);
+						$v1 = trim(trim($v[1]), '"\'');
+						if ($v0 == "class") {
 							$className = $v1;
 						}
 						else {
-							$entity[$v[0]] = $v1;
+							$entity[$v0] = $v1;
 						}
 					}
 				}
 			}
-
+			
 			// first store all tables
 			$this->cache['tables'][$table->getName()] = array(
-				'className' => $className,
+				'className' => trim($className),
 				'table' => $table,
 				'entity' => $entity,
 			);
-			
+
 			$this->cacheForeignKeys($table);
 		}
 	}
 
 
-	protected function cacheForeignKeys($table)			
+
+
+
+	protected function cacheForeignKeys($table)
 	{
 		// not implemented yet
 	}
+
+
+
 
 
 	public function createClasses()
@@ -198,7 +205,7 @@ class DatabaseLoader
 	protected function generateEntityDescription($table, $entity)
 	{
 		$tableArray = array('name' => $table->getName());
-		
+
 		$ret = "";
 		$ret .= " * @Entity(" . Metadata\Annotations::serializeArray($entity) . ")\n";
 		$ret .= " * @Table(" . Metadata\Annotations::serializeArray($tableArray) . ")\n";
@@ -222,11 +229,14 @@ class DatabaseLoader
 
 		// php nezná datové typy time (d,t) naopak bool (b) nezná mysql, dostupné typy pro anotace jsou string, int, float
 		foreach ($table->getColumns() as $column) {
-			$ret .= $this->generateEntityProperty($table, $column, $pks);
+			$ret .= $this->generateEntityProperty($column, $pks);
 		}
 
 		return $ret;
 	}
+
+
+
 
 
 	protected function generateEntityAssociations($table)
@@ -234,10 +244,35 @@ class DatabaseLoader
 		$ret = "";
 
 		// not implemented 
-		
+
 		return $ret;
 	}
 
+
+	protected function generateIDEProperties($table)
+	{
+		$ret = "";
+
+		// php nezná datové typy time (d,t) naopak bool (b) nezná mysql, dostupné typy pro anotace jsou string, int, float
+		foreach ($table->getColumns() as $column) {
+			$ret .= $this->generateIDEProperty($column);
+		}
+
+		return $ret;
+	}
+
+
+
+
+
+	protected function generateIDEAssociations($table)
+	{
+		$ret = "";
+
+		// not implemented 
+
+		return $ret;
+	}
 
 
 
@@ -252,6 +287,11 @@ class DatabaseLoader
 		$ret .= " *\n";
 		$ret .= $this->generateEntityAssociations($table);
 		$ret .= " *\n";
+		$ret .= " *\n";
+		$ret .= $this->generateIDEProperties($table);
+		$ret .= " *\n";
+		$ret .= $this->generateIDEAssociations($table);
+		$ret .= " *\n";
 		$ret .= " */\n";
 
 		return $ret;
@@ -261,25 +301,21 @@ class DatabaseLoader
 
 
 
-	protected function generateEntityProperty($table, \DibiColumnInfo $column, $pks)
+	protected function generateIDEProperty(\DibiColumnInfo $column)
 	{
 		$name = $column->getName();
-		
-		$params = array(
-			'type' => $type = $column->getType(),
-			'size' => $column->getSize(),
-			'nullable' => $column->isNullable() ? true : false,
-			'default' => is_null($default = $column->getDefault()) ? NULL : $default,
-		);
+		$type = $column->getType();
 
-		if (in_array($name, $pks)) {
-			$params['primary'] = true;
-			if ($column->isAutoincrement()) {
-				$params['autoincrement'] = true;
-			}
-		}
-		
-		$propertyType = NULL;
+		return ' * @property ' . $this->getPropertyType($type) . ' $' . $name . "\n";
+	}
+
+
+
+
+
+	protected function getPropertyType($type)
+	{
+		$propertyType = "";
 		switch ($type) {
 			case "s":
 				$propertyType = "string";
@@ -299,7 +335,31 @@ class DatabaseLoader
 				break;
 		}
 
-		return ' * @property ' . $propertyType . ' $' . $name . "	Column(" . Metadata\Annotations::serializeArray($params) . ")\n";
+		return $propertyType;
+	}
+
+
+
+
+
+	protected function generateEntityProperty(\DibiColumnInfo $column, $pks)
+	{
+		$params = array(
+			'name' => $name = $column->getName(),
+			'type' => $type = $column->getType(),
+			'size' => $column->getSize(),
+			'nullable' => $column->isNullable() ? true : false,
+			'default' => is_null($default = $column->getDefault()) ? NULL : $default,
+		);
+
+		if (in_array($name, $pks)) {
+			$params['primary'] = true;
+			if ($column->isAutoincrement()) {
+				$params['autoincrement'] = true;
+			}
+		}
+
+		return ' * @Column(' . Metadata\Annotations::serializeArray($params) . ')' . "\n";
 	}
 
 
@@ -326,11 +386,5 @@ class DatabaseLoader
 		}
 		return $this->cache['databaseInfo'];
 	}
-
-
-
-
-
-
 
 }

@@ -28,9 +28,6 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 	/** @var array IdentityMap */
 	protected static $_identities;
 
-	/** @var array DbValidator */
-	protected static $_validators;
-
 	/** @var \Nette\DI\Container */
 	protected static $_context;
 
@@ -40,8 +37,6 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 	/** @var string default mapper object */
 	const DEFAULT_MAPPER = '\System\DbRecord\DbMapper';
 
-	/** @var string default validator object */
-	const DEFAULT_VALIDATOR = '\System\DbRecord\DbValidator';
 
 	/** @var string default collection object */
 	const DEFAULT_COLLECTION = '\System\DbRecord\DbRecordCollection';
@@ -233,40 +228,6 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 		return static::$_mainIndex;
 	}
 
-	/**
-	 * Return all defined behaviors for record.
-	 *
-	 * @return array
-	 */
-	public static function behaviors()
-	{
-		return array(
-			'beforeInsert' => array(
-
-			),
-
-			'afterInsert' => array(
-
-			),
-
-			'beforeUpdate' => array(
-
-			),
-
-			'afterUpdate' => array(
-
-			),
-
-			'beforeDelete' => array(
-
-			),
-
-			'afterDelete' => array(
-
-			),
-
-		);
-	}
 
 	/**
 	 * Get/Create DbMapper object of DbRecord / there is not use getter because of possible colision with the name of database column
@@ -297,20 +258,6 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 		return self::$_identities[$class];
 	}
 
-	/**
-	 * Get/Create DbValidator object of DbRecord / there is not use getter because of possible colision with the name of database column
-	 *
-	 * @return \System\DbRecord\DbValidator
-	 */
-	public static function validator()
-	{
-		$class = get_called_class();
-		if (!isset(self::$_validators[$class])) {
-			$validatorClass = static::DEFAULT_VALIDATOR;
-			self::$_validators[$class] = new $validatorClass($class);
-		}
-		return self::$_validators[$class];
-	}
 
 	/**
 	 * Get DbRecordConfiguration object of DbRecord / there is not use getter because of possible colision with the name of database column
@@ -403,20 +350,6 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 
 
 
-	/**
-	 * Gets current primary key(s) formated for use in array-style-condition.
-	 * @return array
-	 */
-	public function getPrimaryCondition()
-	{
-		$config = static::config();
-		$columns = $config->getColumns();
-		$condition = array();
-		foreach ($config->getPrimaryColumns() as $name)
-			$condition[$name . '%' . $columns[$name]['type']] = $this->$name;
-
-		return $condition;
-	}
 
 
 
@@ -883,7 +816,7 @@ abstract class DbRecord extends FreezableObject implements \ArrayAccess, IObject
 	 */
 	public function validate($operation = NULL)
 	{
-		static::validator()->validate($this, $operation ? $operation : DbValidator::VALIDATION_INSERT);
+		static::validator()->validate($this, $operation ? $operation : EntityValidator::VALIDATION_INSERT);
 	}
 
 	/**

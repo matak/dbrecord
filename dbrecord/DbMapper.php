@@ -222,7 +222,7 @@ class DbMapper extends Object implements IObjectContainerToFree
 
 			$this->onBeforeInsert($record);
 
-			if (!$record->isValid(DbValidator::VALIDATION_INSERT)) {
+			if (!$record->isValid(EntityValidator::VALIDATION_INSERT)) {
 				$errors = $record->getErrors();
 				if (count($errors)) {
 					$msg = current($errors);
@@ -354,7 +354,7 @@ class DbMapper extends Object implements IObjectContainerToFree
 
 				$this->onBeforeUpdate($record);
 
-				if (!$record->isValid(DbValidator::VALIDATION_UPDATE)) {
+				if (!$record->isValid(EntityValidator::VALIDATION_UPDATE)) {
 					$errors = $record->getErrors();
 					if (count($errors)) {
 						$msg = current($errors);

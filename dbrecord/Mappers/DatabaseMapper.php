@@ -8,7 +8,7 @@
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
  */
 
-namespace dbrecord;
+namespace dbrecord\Mappers;
 
 
 class DatabaseMapper implements IDbRecordMapper
@@ -111,7 +111,7 @@ class DatabaseMapper implements IDbRecordMapper
 
 			$this->onBeforeInsert($record);
 
-			if (!$record->isValid(DbValidator::VALIDATION_INSERT)) {
+			if (!$record->isValid(EntityValidator::VALIDATION_INSERT)) {
 				$errors = $record->getErrors();
 				if (count($errors)) {
 					$msg = current($errors);
@@ -243,7 +243,7 @@ class DatabaseMapper implements IDbRecordMapper
 
 				$this->onBeforeUpdate($record);
 
-				if (!$record->isValid(DbValidator::VALIDATION_UPDATE)) {
+				if (!$record->isValid(EntityValidator::VALIDATION_UPDATE)) {
 					$errors = $record->getErrors();
 					if (count($errors)) {
 						$msg = current($errors);
@@ -486,5 +486,22 @@ class DatabaseMapper implements IDbRecordMapper
 			}
 		}
 	}
+	
+	
+	/**
+	 * Gets current primary key(s) formated for use in array-style-condition.
+	 * @return array
+	 */
+	public function getPrimaryCondition()
+	{
+		$config = static::config();
+		$columns = $config->getColumns();
+		$condition = array();
+		foreach ($config->getPrimaryColumns() as $name)
+			$condition[$name . '%' . $columns[$name]['type']] = $this->$name;
+
+		return $condition;
+	}
+	
 
 }
