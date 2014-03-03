@@ -48,7 +48,11 @@ class EntityManager
 
 
 
-
+	/**
+	 * 
+	 * @param string $className
+	 * @return EntityRepository
+	 */
 	public function getRepository($className)
 	{
 		$className = ltrim($className, "\\");

@@ -71,6 +71,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	/*protected $parent;*/
 
 
+	/**#@+ Record state */
 	const STATE_EXISTING = 'e';
 	const STATE_NEW = 'n';
 	const STATE_DELETED = 'd';
@@ -95,7 +96,9 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 		}
 
 	}
-	
+
+
+
 	
 	/**
 	 * 
@@ -117,7 +120,6 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 		if (is_null($action)) {
 			return $this->_lastAction;
 		}
-		
 		$this->_lastAction = $action;
 
 		return $this;
@@ -161,7 +163,6 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 		if (!is_array($primaryColumns)) {
 			$primaryColumns = array($primaryColumns);
 		}
-		
 		foreach ($primaryColumns as $key) {
 			if (isset($values[$key])) {
 				if ($values[$key] === NULL) {
@@ -188,9 +189,174 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 
 
 
+	/**
+	 * Get table name / there is not use getTableName because of possible colision with the name of database column
+	 * @return string
+	 */
+	public static function table()
+	{
+		return static::em()->getRepository(static::class)->getMetadata()->getTable();
+	}
 
 
 
+	/**
+	 * Get table name / there is not use getTableName because of possible colision with the name of database column
+	 * @return string
+	 */
+	public static function context($context = NULL)
+	{
+		return static::em()->getContext();
+	}
+
+
+
+
+	/**
+	 * Get mainIndex / there is not use clasic getter, because of possible colision with the name of database column
+	 * @return string
+	 */
+	public static function mainIndex() {
+		return static::$_mainIndex;
+	}
+
+	/**
+	 * Return all defined behaviors for record.
+	 *
+	 * @return array
+	 */
+	public static function behaviors()
+	{
+		return array(
+			'beforeInsert' => array(
+
+			),
+
+			'afterInsert' => array(
+
+			),
+
+			'beforeUpdate' => array(
+
+			),
+
+			'afterUpdate' => array(
+
+			),
+
+			'beforeDelete' => array(
+
+			),
+
+			'afterDelete' => array(
+
+			),
+
+		);
+	}
+
+	/**
+	 * Get/Create DbMapper object of DbRecord / there is not use getter because of possible colision with the name of database column
+	 *
+	 * @return \System\DbRecord\DbMapper
+	 */
+	public static function mapper()
+	{
+		$class = get_called_class();
+		if (!isset(self::$_mappers[$class])) {
+			$mapperClass = static::DEFAULT_MAPPER;
+			self::$_mappers[$class] = new $mapperClass($class);
+		}
+		return self::$_mappers[$class];
+	}
+
+	/**
+	 * Get/Create Identity Map
+	 *
+	 * @return \System\DbRecord\IdentityMap
+	 */
+	public static function identity()
+	{
+		$class = get_called_class();
+		if (!isset(self::$_identities[$class])) {
+			self::$_identities[$class] = new IdentityMap($class);
+		}
+		return self::$_identities[$class];
+	}
+
+	/**
+	 * Get/Create EntityValidator object of DbRecord / there is not use getter because of possible colision with the name of database column
+	 *
+	 * @return \System\DbRecord\EntityValidator
+	 */
+	public static function validator()
+	{
+		$class = get_called_class();
+		if (!isset(self::$_validators[$class])) {
+			$validatorClass = static::DEFAULT_VALIDATOR;
+			self::$_validators[$class] = new $validatorClass($class);
+		}
+		return self::$_validators[$class];
+	}
+
+	/**
+	 * Get DbRecordConfiguration object of DbRecord / there is not use getter because of possible colision with the name of database column
+	 *
+	 * @return DbRecordConfig
+	 */
+	public static function config()
+	{
+		return static::mapper()->getConfig();
+	}
+
+	/**
+	 * Get global connection / there is not use getter because of possible colision with the name of database column
+	 *
+	 * @return \System\DbRecord\Connection
+	 */
+	public static function connection()
+	{
+		return static::mapper()->getConnection();
+	}
+
+
+
+
+	/**
+	 * Create find query
+	 * @param mixed $conditions
+	 * @return DbRecordFluent
+	 */
+	public static function fluent($conditions = NULL)
+	{
+		return static::mapper()->fluent($conditions);
+	}
+
+
+
+
+	/**
+	 * Find row by primary key or conditions
+	 * @param mixed $conditions
+	 * @return DbRecord
+	 */
+	public static function find($primary = NULL, $conditions = NULL)
+	{
+		return static::mapper()->fluent($conditions)->find($primary);
+	}
+
+
+
+
+	/**
+	 * Find row by conditions
+	 * @param mixed $conditions
+	 * @return DbRecord
+	 */
+	public static function findBy($conditions = array())
+	{
+		return static::mapper()->fluent()->findBy($conditions);
+	}
 
 
 

@@ -134,4 +134,9 @@ class EntityMetadata
 		return $this->repositoryClass;
 	}
 
+	public function getTable()
+	{
+		return $this->table;
+	}
+	
 }

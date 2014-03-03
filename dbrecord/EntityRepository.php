@@ -37,29 +37,6 @@ class EntityRepository
 
 
 
-	/**
-	 * Return all defined behaviors for record.
-	 *
-	 * @return array
-	 */
-	public static function behaviors()
-	{
-		return array(
-			'beforeInsert' => array(
-			),
-			'afterInsert' => array(
-			),
-			'beforeUpdate' => array(
-			),
-			'afterUpdate' => array(
-			),
-			'beforeDelete' => array(
-			),
-			'afterDelete' => array(
-			),
-		);
-	}
-
 
 
 
@@ -86,7 +63,10 @@ class EntityRepository
 
 
 
-
+	/**
+	 * 
+	 * @return Metadata\EntityMetadata
+	 */
 	public function getMetadata()
 	{
 		return $this->metadata;
