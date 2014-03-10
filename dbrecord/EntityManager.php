@@ -59,7 +59,7 @@ class EntityManager
 
 		if (!isset($this->repositories[$className])) {
 			$metadata = $this->createMetadata($className);
-			$repositoryClass = $metadata->getRepositoryClass();
+			$repositoryClass = $metadata->getRepositoryClass() ?: "\dbrecord\EntityRepository";
 			$this->repositories[$className] = new $repositoryClass($this, $metadata);
 		}
 

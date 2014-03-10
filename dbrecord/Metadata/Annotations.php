@@ -39,6 +39,8 @@ class Annotations
 			elseif ($key == "Table") {
 				$table = $value[0];
 				$ret['table'] = (string) $table->name;
+				$ret['mainIndex'] = isset($table->mainIndex) ? (string) $table->mainIndex : NULL;
+				$ret['topicIndex'] = isset($table->topicIndex) ? (string) $table->topicIndex : NULL;
 			}
 			elseif ($key == "Column") {
 				foreach ($value as $column) {

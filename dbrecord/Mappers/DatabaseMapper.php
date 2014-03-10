@@ -1,30 +1,30 @@
 <?php
 
 
+namespace dbrecord\Mappers;
+
+use dbrecord\Entity,
+		dbrecord\EntityRepository;
+
 /**
  * Base mapper class by pattern Table Data Gateway.
  *
  * @author     Roman Matěna
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
  */
-
-namespace dbrecord\Mappers;
-
-
 class DatabaseMapper implements IDbRecordMapper
 {
 
-	/** @var string classname of System\DbRecord\DbRecord */
-	protected $recordClass;
+	/** @var EntityRepository */
+	protected $repository;
 
 	/**
-	 * Mapper's constructor.
-	 * @param string $recordClass
+	 * 
+	 * @param \dbrecord\EntityRepository $repository
 	 */
-	public function __construct($recordClass)
+	public function __construct(EntityRepository $repository)
 	{
-
-		$this->recordClass = $recordClass;
+		$this->repository = $repository;
 
 		$behaviors = $recordClass::behaviors();
 
@@ -54,8 +54,9 @@ class DatabaseMapper implements IDbRecordMapper
 		/*if (!$record->isRecordNew())
 			   throw new \Nette\InvalidStateException("Only new record can be inserted.");*/
 
-		// pro asociace ktere nejsou dirty (tedy byli vytovrene prazdne) nevyhazujeme exception, ty preskakujeme
 		if (!$record->isDirty()) {
+			// pro asociace ktere nejsou dirty (tedy byli vytvorene prazdne) 
+			// nevyhazujeme exception, ty preskakujeme
 			if ($record->belongsToAssociation) {
 				return false;
 			}
@@ -360,17 +361,6 @@ class DatabaseMapper implements IDbRecordMapper
 
 	}
 	
-	
-	/**
-	 * Create DbRecordFluent instance
-	 * 
-	 * @param string $recordClass
-	 * @return \System\DbRecord\DbRecordFluent
-	 */
-	public function createDbRecordFluentClass($recordClass)
-	{
-		return new DbRecordFluent($recordClass);
-	}
 
 
 

@@ -217,7 +217,7 @@ class DatabaseLoader
 
 
 
-	protected function generateEntityProperties($table)
+	protected function generateEntityProperties(\DibiTableInfo $table)
 	{
 		$ret = "";
 

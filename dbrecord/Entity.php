@@ -151,18 +151,19 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	/**
 	 * Detects record's state.
 	 *
-	 * @param array $input
-	 *
+	 * @param array $values
 	 * @return int
 	 */
 	protected function detectState(array $values)
 	{
 		$state = self::STATE_EXISTING;
-		$primaryColumns = self::em()->getRepository(static::class)->getMetadata()->getPrimaryColumns();
+		$primaryColumns = self::em()->getRepository(static::class)->getMetadata()->getPrimaryColumnsKeys();
 
 		if (!is_array($primaryColumns)) {
 			$primaryColumns = array($primaryColumns);
 		}
+		
+		// chybi-li zadani jen jednoho jedine klice pak jde o novou entity
 		foreach ($primaryColumns as $key) {
 			if (isset($values[$key])) {
 				if ($values[$key] === NULL) {
@@ -195,30 +196,18 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	 */
 	public static function table()
 	{
-		return static::em()->getRepository(static::class)->getMetadata()->getTable();
+		return self::em()->getRepository(static::class)->getMetadata()->getTable();
 	}
 
 
 
-	/**
-	 * Get table name / there is not use getTableName because of possible colision with the name of database column
-	 * @return string
-	 */
-	public static function context($context = NULL)
+	public static function context()
 	{
-		return static::em()->getContext();
+		return self::em()->getContext();
 	}
 
 
 
-
-	/**
-	 * Get mainIndex / there is not use clasic getter, because of possible colision with the name of database column
-	 * @return string
-	 */
-	public static function mainIndex() {
-		return static::$_mainIndex;
-	}
 
 	/**
 	 * Return all defined behaviors for record.
@@ -300,23 +289,13 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	}
 
 	/**
-	 * Get DbRecordConfiguration object of DbRecord / there is not use getter because of possible colision with the name of database column
-	 *
-	 * @return DbRecordConfig
-	 */
-	public static function config()
-	{
-		return static::mapper()->getConfig();
-	}
-
-	/**
 	 * Get global connection / there is not use getter because of possible colision with the name of database column
 	 *
 	 * @return \System\DbRecord\Connection
 	 */
 	public static function connection()
 	{
-		return static::mapper()->getConnection();
+		return self::em()->getConnection();
 	}
 
 
@@ -329,7 +308,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	 */
 	public static function fluent($conditions = NULL)
 	{
-		return static::mapper()->fluent($conditions);
+		return self::em()->getRepository(static::class)->fluent($conditions);
 	}
 
 
@@ -342,7 +321,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	 */
 	public static function find($primary = NULL, $conditions = NULL)
 	{
-		return static::mapper()->fluent($conditions)->find($primary);
+		return self::em()->getRepository(static::class)->fluent($conditions)->find($primary);
 	}
 
 
@@ -355,7 +334,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	 */
 	public static function findBy($conditions = array())
 	{
-		return static::mapper()->fluent()->findBy($conditions);
+		return self::em()->getRepository(static::class)->findBy($conditions);
 	}
 
 
@@ -393,21 +372,6 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 
 
 
-
-
-	/**
-	 * Gets current primary key(s) formated in string, joined by underscore.
-	 * @return array
-	 */
-	public function getPrimaryKey()
-	{
-		$config = static::config();
-		$condition = array();
-		foreach ($config->getPrimaryColumns() as $name)
-			$condition[] = $this->$name;
-
-		return implode("_", $condition);
-	}
 
 
 
@@ -604,6 +568,19 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 		return $this->getState() === self::STATE_DELETED;
 	}
 
+	
+	/**
+	 * Save record
+	 * 
+	 * @throws Exception
+	 * @return Entity
+	 */
+	final public function save()
+	{
+		return self::em()->getRepository(static::class)->save($this);
+	}
+
+	
 
 	/**
 	 * Returns property value. Do not call directly.
@@ -621,18 +598,19 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 
 		}
 		catch(\Nette\MemberAccessException $e) {
-			$config = static::config();
+			$repository = self::em()->getRepository(static::class);
+			$metadata = $repository->getMetadata();
 
-			if (!$config->hasColumn($name)) {
-				if ($config->isAssociation($name)) {
+			if (!$metadata->hasColumn($name)) {
+				if ($metadata->isAssociation($name)) {
 					// associace uz byla drive vytvorena, tak ji vratime
 					if (array_key_exists($name, $this->_associations)) {
 						$reference = $this->_associations[$name];
 						return $reference;
 					}
 
-					// jak vidno vytvorena jeste nebyla zjistime o jaky typ se jedna
-					$reference = $this->_associations[$name] = $config->getAssociation($name)->retrieveReferenced($this);
+					// associace k tomuto objektu neexistuje, vytvorime ji
+					$reference = $this->_associations[$name] = $repository->createAssociatedObject($name, $this);
 					return $reference;
 				}
 
@@ -644,7 +622,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 				return $value; // PHP work-around (Only variable references should be returned by reference)
 			}
 			else {
-				$defaults = $config->getDefaults();
+				$defaults = $metadata->getDefaults();
 				if (array_key_exists($name, $defaults)) {
 					$value = $defaults[$name];
 					return $value; // PHP work-around (Only variable references should be returned by reference)

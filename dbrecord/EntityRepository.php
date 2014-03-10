@@ -27,7 +27,7 @@ class EntityRepository
 
 
 
-	public function __construct(EntityManager $em, EntityMetadata $metadata)
+	public function __construct(EntityManager $em, Metadata\EntityMetadata $metadata)
 	{
 		$this->em = $em;
 		$this->metadata = $metadata;
@@ -53,8 +53,8 @@ class EntityRepository
 	public function getMapper()
 	{
 		if (!$this->mapper) {
-			$mapperClass = $this->getMetadata()->getMapperClass() ? : "\dbrecord\Mappers\DatabaseMapper";
-			$this->mapper = new $mapperClass;
+			$mapperClass = $this->getMetadata()->getMapperClass() ?: "\dbrecord\Mappers\DatabaseMapper";
+			$this->mapper = new $mapperClass($this);
 		}
 
 		return $this->mapper;
@@ -72,4 +72,74 @@ class EntityRepository
 		return $this->metadata;
 	}
 
+	
+	
+	/**
+	 * 
+	 * @return EntityManager
+	 */
+	public function getEm()
+	{
+		return $this->getEntityManager();
+	}
+	
+	
+	/**
+	 * 
+	 * @return EntityManager
+	 */
+	public function getEntityManager()
+	{
+		return $this->em;
+	}
+	
+	/**
+	 * 
+	 * @param \dbrecord\Entity $record
+	 * @return \dbrecord\Entity
+	 * @throws Exception
+	 */
+	public function save(Entity $record)
+	{
+		$record->updating();
+
+		if ($record->isRecordDeleted()) {
+			throw new Exception("You can't save deleted object.");
+		}
+		elseif ($record->isRecordNew()) {
+			$this->getMapper()->insert($record);
+		}
+		elseif ($this->isRecordExisting()) {
+			$this->getMapper()->update($record);
+		}
+
+		return $record;		
+	}
+	
+	
+	
+	/**
+	 * Gets current primary key(s) values formated in string, joined by underscore.
+	 * Used to be $record->getPrimaryKey(
+	 * 
+	 * @return array
+	 */
+	public function getUniqueValue($record)
+	{
+		$metadata = $this->getMetadata();
+		$values = array();
+		foreach ($metadata->getPrimaryColumnsKeys() as $key) {
+			$values[] = $record->$key;			
+		}
+
+		return implode("_", $values);
+	}
+
+
+	public function createAssociatedObject($name, $record)
+	{
+		$metadata = $this->getMetadata();
+		
+		
+	}
 }

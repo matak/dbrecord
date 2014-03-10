@@ -17,6 +17,14 @@ class EntityMetadata
 
 
 	/** @var string */
+	protected $mainIndex;
+
+
+	/** @var string */
+	protected $topicIndex;
+
+
+	/** @var string */
 	protected $repositoryClass;
 
 
@@ -42,7 +50,7 @@ class EntityMetadata
 	public function __construct($data)
 	{
 		// check variables
-		$properties = array("repositoryClass", "validatorClass", "mapperClass", "table");
+		$properties = array("repositoryClass", "validatorClass", "mapperClass", "table", "mainIndex", "topicIndex");
 		foreach ($properties as $key) {
 			if (isset($data[$key])) {
 				$this->$key = $data[$key];
@@ -52,29 +60,18 @@ class EntityMetadata
 		if (isset($data['columns'])) {
 			foreach ($data['columns'] as $name => $column) {
 				$this->addColumn(
-						$name, $column['type'], 
-						array_key_exists("size", $column) ? $column['size'] : NULL, 
-						array_key_exists("nullable", $column) ? $column['nullable'] : false, 
-						array_key_exists("primary", $column) ? $column['primary'] : false, 
-						array_key_exists("autoincrement", $column) ? $column['autoincrement'] : false, 
-						array_key_exists("default", $column) ? $column['default'] : NULL
+						$name, $column['type'], array_key_exists("size", $column) ? $column['size'] : NULL, array_key_exists("nullable", $column) ? $column['nullable'] : false, array_key_exists("primary", $column) ? $column['primary'] : false, array_key_exists("autoincrement", $column) ? $column['autoincrement'] : false, array_key_exists("default", $column) ? $column['default'] : NULL
 				);
 			}
 		}
-		
+
 		if (isset($data['associations'])) {
 			foreach ($data['associations'] as $name => $a) {
 				$this->addAssociation(
-						$name, 
-						$a['type'], 
-						$a['referenceClass'], 
-						$a['localId'], 
-						$a['foreignId'], 
-						array_key_exists("associatedCollectionClass", $a) ? $a['associatedCollectionClass'] : NULL
+						$name, $a['type'], $a['referenceClass'], $a['localId'], $a['foreignId'], array_key_exists("associatedCollectionClass", $a) ? $a['associatedCollectionClass'] : NULL
 				);
 			}
 		}
-		
 	}
 
 
@@ -101,7 +98,9 @@ class EntityMetadata
 	}
 
 
-	
+
+
+
 	/**
 	 * Add column
 	 * @param string $name
@@ -114,18 +113,20 @@ class EntityMetadata
 			'foreignId' => $foreignId,
 			'associatedCollectionClass' => $associatedCollectionClass,
 		);
-		
+
 		if ($type == "hasOne") {
 			$association = new \dbrecord\HasOneAssociation($referenceClass, $params);
 		}
 		elseif ($type == "hasMany") {
 			$association = new \dbrecord\HasManyAssociation($referenceClass, $params);
 		}
-		
+
 		$this->associations[$name] = $association;
-		
+
 		return $this;
-	}	
+	}
+
+
 
 
 
@@ -134,9 +135,54 @@ class EntityMetadata
 		return $this->repositoryClass;
 	}
 
+
+
+
+
 	public function getTable()
 	{
 		return $this->table;
 	}
+
+	
+	public function getPrimaryColumnsKeys()
+	{
+		return array_keys(array_filter($this->columns, function($values) {
+												if (!$values['primary']) {
+													return false;
+												}
+												return true;
+											}));
+	}
+	
+	
+	
+	/**
+	 * Isset association with key?
+	 *
+	 * @param  string $key
+	 * @return bool
+	 */
+	public function isAssociation($key)
+	{
+		return isset($this->associations[$key]);
+	}
+
+
+	
+
+
+	/**
+	 * Has column
+	 * @param string $name
+	 * @return bool
+	 */
+	public function hasColumn($name)
+	{
+		return isset($this->columns[$name]);
+	}
+
+
+	
 	
 }
