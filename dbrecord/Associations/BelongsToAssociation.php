@@ -1,6 +1,5 @@
 <?php
 
-
 /**
  * @author     Roman Matěna
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
@@ -14,6 +13,10 @@ final class BelongsToAssociation extends Association
 	/** DbRecord */
 	private $belongsToRecord;
 
+
+
+
+
 	/**
 	 * Association constructor.
 	 *
@@ -21,22 +24,29 @@ final class BelongsToAssociation extends Association
 	 * @param string $localId  localId column name
 	 * @param string $foreignId  paramId column name
 	 */
-	public function __construct($record, $localId, $foreignId) {
+	public function __construct($record, $localId, $foreignId)
+	{
 		parent::__construct(self::BELONGS_TO, NULL, $localId, $foreignId);
 
 		$this->belongsToRecord = $record;
 	}
+
+
+
+
 
 	public function getBelongsToRecord()
 	{
 		return $this->belongsToRecord;
 	}
 
+
+
+
+
 	public function getReferenceClass()
 	{
 		throw new \Nette\DeprecatedException;
 	}
-
-
 
 }

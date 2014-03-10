@@ -321,7 +321,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 	 */
 	public static function find($primary = NULL, $conditions = NULL)
 	{
-		return self::em()->getRepository(static::class)->fluent($conditions)->find($primary);
+		return self::em()->getRepository(static::class)->find($primary, $conditions);
 	}
 
 
@@ -653,10 +653,11 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 
 		}
 		catch(\Nette\MemberAccessException $e) {
-			$config = static::config();
+			$repository = self::em()->getRepository(static::class);
+			$metadata = $repository->getMetadata();
 
-			if (!$config->hasColumn($name)) {
-				if (!$config->isAssociation($name)) {
+			if (!$metadata->hasColumn($name)) {
+				if ($metadata->isAssociation($name)) {
 					throw $e;
 				}
 
@@ -668,7 +669,7 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 				}
 
 
-				$reference = $config->getAssociation($name)->saveReferenced($this, $value, $this->_construction);
+				$reference = $repository->saveAssociatedObject($name, $this, $value, $this->_construction);
 				$this->_associations[$name] = $reference;
 
 				return;
@@ -678,32 +679,35 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 			// jinak by se do dtb zapsal prazdny string coz napr. u company, ico atd. nema vyznam, dokonce to i u ICO vyrazne skodi
 			//TODO: docela potencionalni bug / asi by se to melo resit jinde - napr. parametrem v konstruktoru
 			if (isset($this->_construction['nullableToNULL']) && $this->_construction['nullableToNULL'] === true) {
-				if ($value === "" && $config->isNullable($name) && !$config->isMandatory($name)) {
+				if ($value === "" && $metadata->isNullable($name) && !$metadata->isMandatory($name)) {
 					$value = NULL;
 				}
 			}
 
 
 			if (!is_null($value)) {
-				$type = $config->getType($name);
+				$type = $metadata->getType($name);
 				switch ($type) {
 					case "s":
-						$value=(string)$value;
+						$value = (string)$value;
 						// trimstrings oreze vsechny stringy funkci trim
 						if (isset($this->_construction['trimStrings']) && $this->_construction['trimStrings'] === true) {
 							$value = trim($value);
 						}
 						break;
+						
 					case "i":
-						$value=(int)$value;
+						$value = (int)$value;
 						break;
+					
 					case "f":
 						if (isset($this->_construction['floatReplaceDecimals']) && $this->_construction['floatReplaceDecimals'] === true) {
 							$value = preg_replace("/,/", ".", $value);
 						}
 
-						$value=(float)$value;
+						$value = (float)$value;
 						break;
+						
 					case "d":
 					case "t": // z dtb vzdy dostaneme tento tvar 2010-01-01 / z formu muzeme dostat ledasco / my budeme pracovat s DateTime / pri ukladani do dtb nebo do array bychom meli ulozit string, tedy Y-m-d H:i:s
 						// povazujeme za NULL

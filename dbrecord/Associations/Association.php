@@ -59,10 +59,12 @@ abstract class Association extends Object implements IObjectContainerToFree
 	 */
 	public function __construct($type, $referenceClass, $localId, $foreignId, $condition = NULL, $through = NULL, $throughLocalId = NULL, $throughForeignId = NULL) {
 
-		if (in_array($type, self::$types))
-			$this->type = $type;
-		else
-			throw new \Nette\InvalidArgumentException("Unknown association type '$type' given.");
+		if (in_array($type, self::$types)) {
+			$this->type = $type;			
+		}
+		else {
+			throw new \Nette\InvalidArgumentException("Unknown association type '$type' given.");			
+		}
 
 		$this->referenceClass = $referenceClass;
 

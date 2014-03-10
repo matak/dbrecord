@@ -60,7 +60,13 @@ class EntityMetadata
 		if (isset($data['columns'])) {
 			foreach ($data['columns'] as $name => $column) {
 				$this->addColumn(
-						$name, $column['type'], array_key_exists("size", $column) ? $column['size'] : NULL, array_key_exists("nullable", $column) ? $column['nullable'] : false, array_key_exists("primary", $column) ? $column['primary'] : false, array_key_exists("autoincrement", $column) ? $column['autoincrement'] : false, array_key_exists("default", $column) ? $column['default'] : NULL
+						$name, 
+						$column['type'], 
+						array_key_exists("size", $column) ? $column['size'] : NULL, 
+						array_key_exists("nullable", $column) ? $column['nullable'] : false, 
+						array_key_exists("primary", $column) ? $column['primary'] : false, 
+						array_key_exists("autoincrement", $column) ? $column['autoincrement'] : false, 
+						array_key_exists("default", $column) ? $column['default'] : NULL
 				);
 			}
 		}
@@ -68,7 +74,12 @@ class EntityMetadata
 		if (isset($data['associations'])) {
 			foreach ($data['associations'] as $name => $a) {
 				$this->addAssociation(
-						$name, $a['type'], $a['referenceClass'], $a['localId'], $a['foreignId'], array_key_exists("associatedCollectionClass", $a) ? $a['associatedCollectionClass'] : NULL
+						$name, 
+						$a['type'], 
+						$a['referenceClass'], 
+						$a['localId'], 
+						$a['foreignId'], 
+						array_key_exists("associatedCollectionClass", $a) ? $a['associatedCollectionClass'] : NULL
 				);
 			}
 		}
@@ -184,5 +195,84 @@ class EntityMetadata
 
 
 	
+
+	/**
+	 * Get association by key.
+	 *
+	 * @param  string $key
+	 * @return HasManyAssociation|HasOneAssociation
+	 */
+	public function getAssociation($key)
+	{
+		return $this->associations[$key];
+	}
+
+	
+	
+	/**
+	 * Is column nullable
+	 * @param string $name
+	 * @return bool
+	 */
+	public function isNullable($name)
+	{
+		return $this->columns[$name]['nullable'];
+	}
+
+
+
+
+	/**
+	 * Is column nullable
+	 * @param string $name
+	 * @return bool
+	 */
+	public function isAutoincrement($name)
+	{
+		return $this->columns[$name]['autoincrement'];
+	}
+
+
+
+
+	/**
+	 * Returns columns default.
+	 * @param string $name
+	 * @return bool
+	 */
+	public function getDefault($name)
+	{
+		return $this->columns[$name]['default'];
+	}
+
+
+	/**
+	 * Is column mandatory.
+	 * @param string $name
+	 * @return bool
+	 */
+	public function isMandatory($name)
+	{
+		if (!$this->isNullable($name) && !$this->isAutoincrement($name) && $this->getDefault($name) === NULL) {
+			return true;
+		}
+		
+		return false;
+	}
+
+
+
+	
+	/**
+	 * Returns columns type.
+	 * @return string
+	 */
+	public function getType($name)
+	{
+		return $this->columns[$name]['type'];
+	}
+
+	
+
 	
 }
