@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Base mapper class by pattern Table Data Gateway.
+ * Metadata class
  *
  * @author     Roman Matěna
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
@@ -11,6 +11,9 @@ namespace dbrecord\Metadata;
 
 class EntityMetadata
 {
+
+	/** @var string */
+	protected $entityClass;
 
 	/** @var string */
 	protected $table;
@@ -32,10 +35,6 @@ class EntityMetadata
 	protected $validatorClass;
 
 
-	/** @var string */
-	protected $mapperClass;
-
-
 	/** @var array */
 	protected $associations = array();
 
@@ -50,7 +49,7 @@ class EntityMetadata
 	public function __construct($data)
 	{
 		// check variables
-		$properties = array("repositoryClass", "validatorClass", "mapperClass", "table", "mainIndex", "topicIndex");
+		$properties = array("entityClass", "repositoryClass", "validatorClass", "table", "mainIndex", "topicIndex");
 		foreach ($properties as $key) {
 			if (isset($data[$key])) {
 				$this->$key = $data[$key];
@@ -139,6 +138,10 @@ class EntityMetadata
 
 
 
+	public function getEntityClass()
+	{
+		return $this->entityClass;
+	}
 
 
 	public function getRepositoryClass()
@@ -164,6 +167,18 @@ class EntityMetadata
 												}
 												return true;
 											}));
+	}
+	
+	
+
+	/**
+	 * Get first primary column name
+	 * @return string
+	 */
+	public function getPrimaryColumn()
+	{
+		$primaryColumns = $this->getPrimaryColumnsKeys();
+		return $primaryColumns[0];
 	}
 	
 	
@@ -193,6 +208,18 @@ class EntityMetadata
 		return isset($this->columns[$name]);
 	}
 
+
+
+
+
+	/**
+	 * Get columns schema
+	 * @return array
+	 */
+	public function getColumns()
+	{
+		return $this->columns;
+	}
 
 	
 

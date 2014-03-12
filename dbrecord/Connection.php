@@ -3,8 +3,7 @@
 namespace dbrecord;
 
 use DibiEvent,
-		DibiException,
-		Nette;
+		DibiException;
 
 
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Base mapper class by pattern Table Data Gateway.
+ * Repository/Mapper class by pattern Table Data Gateway.
  *
  * @author     Roman Matěna
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
@@ -19,9 +19,6 @@ class EntityRepository
 	/** @var EntityMetadata */
 	protected $metadata;
 
-
-	/** @var IDbRecordMapper */
-	protected $mapper;
 
 
 
@@ -41,6 +38,10 @@ class EntityRepository
 
 
 
+	/**
+	 * 
+	 * @return \dbrecord\Connection
+	 */
 	public function getConnection()
 	{
 		return $this->em->getConnection();
@@ -50,15 +51,6 @@ class EntityRepository
 
 
 
-	public function getMapper()
-	{
-		if (!$this->mapper) {
-			$mapperClass = $this->getMetadata()->getMapperClass() ?: "\dbrecord\Mappers\DatabaseMapper";
-			$this->mapper = new $mapperClass($this);
-		}
-
-		return $this->mapper;
-	}
 
 
 
@@ -107,10 +99,10 @@ class EntityRepository
 			throw new Exception("You can't save deleted object.");
 		}
 		elseif ($record->isRecordNew()) {
-			$this->getMapper()->insert($record);
+			$this->insert($record);
 		}
 		elseif ($this->isRecordExisting()) {
-			$this->getMapper()->update($record);
+			$this->update($record);
 		}
 
 		return $record;		
@@ -159,7 +151,7 @@ class EntityRepository
 			return NULL;
 		}
 		
-		$classRepository = $this->getEntityManager()->getRepository($class::class);
+		$classRepository = $this->getEntityManager()->getRepository($class);
 
 		if (($reference = $classRepository->find($record->$key))) {
 			$reference->belongsToAssociation = new BelongsToAssociation($record, $association->getForeignId(), $association->getLocalId());
@@ -256,9 +248,100 @@ class EntityRepository
 	 */
 	public function find($primary = NULL, $conditions = NULL)
 	{
-		return $this->fluent($conditions)->find($primary);
+		return $this->query($conditions)->find($primary);
 	}
 
 
+	
+	
+
+
+	public function fluent($conditions = NULL)
+	{
+		return $this->query($conditions);
+	}
+	
+
+	/**
+	 * 
+	 * #preg_match('~^\[(?<select>.*)\]\s+(?<query>%\w+)\s+(?<objects>#\w+(?:\s+#\w+)*)$~Ui', $conditions, $match);
+	 * #preg_match('~^%(?<query>\w+)~', $conditions, $match);
+	 * 
+	 * @param type $conditions
+	 * @return type
+	 */
+	public function query($conditions = NULL)
+	{			
+		if (!$conditions) {
+			$query = $this->buildQuery();
+		}
+		elseif (preg_match('~^%(.*)~', $conditions, $matches)) {
+			$query = $this->buildQuery($matches[1]);
+
+		}
+		else {
+			$query = $this->buildQuery('emptyselect');
+			$query->select($conditions);
+
+		}
+
+		return $query;
+	}
+	
+	
+	
+
+	/**
+	 * Build defined query by name.
+	 *
+	 * @throws	\InvalidArgumentException	Demand on undefined query.
+	 * @param		string $name				Predefined query by object.
+	 * @return	DbRecordFluent
+	 */
+	protected function buildQuery($name = NULL)
+	{
+		$query = new Query($this);
+		
+		switch ($name) {
+			case "emptyselect":
+				$query
+					->select(false)
+					->from('#');
+				break;
+
+			case NULL:
+				$query
+					->select('#.*')
+					->from('#');
+				break;
+
+			default:
+				throw new \Nette\InvalidArgumentException('Undefined query type '.$name.'!');
+				break;
+
+		}
+		
+		return $query;
+	}
+
+	
+	
+	
+	public function createObjectFromValues(array $values)
+	{
+		$className = $this->getMetadata()->getEntityClass();
+		$item = new $className($values);
+		$item->setState(Entity::STATE_EXISTING);
+		return $item;
+	}
+	
+	
+	public function collection(Query $query)
+	{
+		$collection = new EntityCollection($this);
+		$collection->importQuery($query);
+		return $collection;		
+	}
+	
 	
 }

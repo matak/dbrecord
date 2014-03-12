@@ -23,7 +23,7 @@ class EntityManager
 	protected $context;
 
 
-	/** @var System\DbRecord\Connection */
+	/** @var dbrecord\Connection */
 	protected $connection;
 
 

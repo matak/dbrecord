@@ -364,65 +364,6 @@ class DatabaseMapper implements IDbRecordMapper
 
 
 
-	/**
-	 * Get defined query (fluent) by name.
-	 *
-	 * @throws	\InvalidArgumentException	Demand on undefined query.
-	 * @param		string $name				Predefined query by object.
-	 * @return	DbRecordFluent
-	 */
-	public function getQuery($name = NULL)
-	{
-		$recordClass = $this->recordClass;
-		$fluent = $this->createDbRecordFluentClass($recordClass);
-		switch ($name) {
-
-			case "emptyselect":
-				$fluent
-					->select(false)
-					->from('#');
-				break;
-
-			case NULL:
-				$fluent
-					->select('#.*')
-					->from('#');
-#					->as('base');
-#					->as($recordClass);
-				break;
-
-			default:
-				throw new \Nette\InvalidArgumentException('Undefined query type '.$name.'!');
-				break;
-
-		}
-		return $fluent;
-	}
-
-
-
-	public function fluent($conditions = NULL)
-	{
-		#preg_match('~^\[(?<select>.*)\]\s+(?<query>%\w+)\s+(?<objects>#\w+(?:\s+#\w+)*)$~Ui', $conditions, $match);
-		#preg_match('~^%(?<query>\w+)~', $conditions, $match);
-
-		if (!$conditions) {
-			$fluent = $this->getQuery();
-
-		}
-		elseif (preg_match('~^%(.*)~', $conditions, $matches)) {
-			$fluent = $this->getQuery($matches[1]);
-
-		}
-		else {
-			$fluent = $this->getQuery('emptyselect');
-			$fluent->select($conditions);
-
-		}
-
-		return $fluent;
-	}
-
 
 
 	/**

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Base mapper class by pattern Table Data Gateway.
+ * Annotations parser library
  *
  * @author     Roman Matěna
  * @copyright  Copyright (c) 2010 Roman Matěna (http://www.romanmatena.cz)
@@ -21,16 +21,13 @@ class Annotations
 		$reflection = \Nette\Reflection\ClassType::from($className);
 		$annotations = $reflection->getAnnotations();
 
-		$ret = array();
+		$ret = array('entityClass' => $className);
 		foreach ($annotations as $key => $value) {
 
 			if ($key == "Entity") {
 				$entity = $value[0];
 				if (isset($entity->repositoryClass)) {
 					$ret['repositoryClass'] = (string) $entity->repositoryClass;
-				}
-				elseif (isset($entity->mapperClass)) {
-					$ret['mapperClass'] = (string) $entity->mapperClass;
 				}
 				elseif (isset($entity->validatorClass)) {
 					$ret['validatorClass'] = (string) $entity->validatorClass;

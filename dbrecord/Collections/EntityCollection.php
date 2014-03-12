@@ -1,20 +1,23 @@
 <?php
 
-/**
- * DbRecordCollection collects objects
- *
- * @author Roman Matěna
- */
 
 namespace dbrecord;
 
-class DbRecordCollection extends LazyCollection implements IObjectContainerToFree
+/**
+ * EntityCollection collects objects
+ *
+ * @author Roman Matěna
+ */
+class EntityCollection extends LazyCollection implements IObjectContainerToFree
 {
 
-	/** @var DbRecordFluent */
-	protected $fluent;
+	/** @var Query */
+	protected $query;
 
 
+	/** @var EntityRepository */
+	protected $repository;
+	
 	/** should be collected records mapped? */
 	protected $options = array(
 			'mapped' => false,
@@ -26,9 +29,10 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	 *
 	 * @param string $recordClass
 	 */
-	public function __construct($itemType)
+	public function __construct(EntityRepository $repository)
 	{
-		parent::__construct(NULL, $itemType);
+		$this->repository = $repository;
+		parent::__construct(NULL, $repository->getMetadata()->getEntityClass());
 	}
 
 
@@ -49,20 +53,21 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	}
 
 	/**
-	 * Set fluent for collection.
+	 * Create new query based on repository.
 	 *
-	 * @param DbRecordFluent $fluent
+	 * @param string $conditions
+	 * @return EntityCollection
 	 */
-	public function importFluent(DbRecordFluent $fluent)
+	public function query($conditions = NULL)
 	{
-		$this->fluent = $fluent;
-		$this->setLoadable(true);
+		$query = $this->repository->query($conditions);
+		// po vytvoreni noveho query je nutne kolekci vyprazdnit, prvky v kolekci obsazene by neodpovidali novemu query
 		$this->clear();
+		// je mozne opet loadovat
+		$this->setLoadable(true);
 
-		return $this;
+		return $query;
 	}
-
-
 
 	/**
 	 * Load all items defined by fluent.
@@ -80,30 +85,25 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 			throw new Exception('This collection is not loadable! Maybe items were set manualy before load!');
 		}
 		
-		if (!$this->fluent) {
+		if (!$this->query) {
 			// pokud neni fluent set, nastav defaultni
-			$this->fluent();
+			$this->query();
 			#throw new Exception('Fluent is not set');
 		}
-		try {
-			$class = $this->getItemType();
-			foreach ($this->fluent->toArray() as $item) {
-				$item = new $class($item);
-				$item->setState(DbRecord::STATE_EXISTING);
 
-				// map by IdentityMap
-				if ($this->options['mapped']) {
-					$item = $class::identity()->map($item);
-				}
+		foreach ($this->query->toArray() as $values) {
+			$this->repository->createObjectFromValues($values);
 
-				$this->append($item);
+			// map by IdentityMap
+			if ($this->options['mapped']) {
+				$item = $class::identity()->map($item);
 			}
-			$this->setLoaded(true);
-			return $this;
+
+			$this->append($item);
 		}
-		catch (\Exception $e) {
-			throw new Exception("execute query failed. " . $e->getMessage(), $e->getCode(), $e);
-		}
+		$this->setLoaded(true);
+		
+		return $this;
 	}
 
 
@@ -116,7 +116,7 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	public function save()
 	{
 		foreach ($this as &$item) {
-			$item->save();
+			$this->repository->save($item);
 		}
 		
 		return $this;
@@ -128,16 +128,17 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 
 
 	/**
-	 * Get Fluent object.
+	 * Get query object.
 	 *
 	 * @return DbRecordFluent
 	 */
-	public function getFluent() 
+	public function getQuery() 
 	{
-		if (!$this->fluent) {
-			throw new Exception('Fluent is not set');
+		if (!$this->query) {
+			throw new Exception('Query is not set!');
 		}
-		return $this->fluent;
+		
+		return $this->query;
 	}
 
 
@@ -162,8 +163,8 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	 */
 	public function hasErrors()
 	{
-		foreach ($this as &$object) {
-			if ($object->hasErrors()) {
+		foreach ($this as &$item) {
+			if ($item->hasErrors()) {
 				return true;
 			}
 		}
@@ -179,8 +180,8 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	public function getErrors()
 	{
 		$errors = array();
-		foreach ($this as $key => &$object) {
-			$e = $object->getErrors();
+		foreach ($this as $key => &$item) {
+			$e = $item->getErrors();
 			if (count($e)) {
 				$errors[$key] = $e;
 			}
@@ -226,11 +227,11 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 					throw new \LogicException('Collection has been loaded before!');
 				}
 
-				if (!$this->fluent) {
-					$this->fluent();
+				if (!$this->query) {
+					$this->query();
 				}
 
-				return call_user_func_array(array($this->fluent, $clause), $args);
+				return call_user_func_array(array($this->query, $clause), $args);
 				break;
 
 			default:
@@ -239,21 +240,7 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 		}
 	}
 
-	/**
-	 * Create new fluent and replace it to the collection.
-	 *
-	 * @param string $conditions
-	 * @return AssociatedCollection
-	 */
-	public function fluent($conditions = NULL)
-	{
-		$class = $this->getItemType();
-		$fluent = $class::fluent($conditions);
-		$this->importFluent($fluent);
 
-		return $fluent;
-
-	}
 
 	
 	/**
@@ -263,11 +250,9 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	 */
 	public function pk($pk)
 	{
-		$item = $this->getItemType();
-
-		$pkname = $item::config()->getPrimaryColumn();
+		$pkName = $this->repository->getMetadata()->getPrimaryColumn();
 		foreach($this as $item) {
-			if ($item->$pkname == $pk) {
+			if ($item->$pkName == $pk) {
 				return $item;
 			}
 		}
@@ -284,9 +269,11 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 					break;
 				}
 			}
+			
 			if ($skip) {
 				continue;
 			}
+			
 			return $item;
 		}
 		return NULL;
@@ -326,8 +313,4 @@ class DbRecordCollection extends LazyCollection implements IObjectContainerToFre
 	}	
 
 
-	public function getConnection()
-	{
-		return $this->getFluent()->getConnection();
-	}
 }

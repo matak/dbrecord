@@ -244,60 +244,6 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 		);
 	}
 
-	/**
-	 * Get/Create DbMapper object of DbRecord / there is not use getter because of possible colision with the name of database column
-	 *
-	 * @return \System\DbRecord\DbMapper
-	 */
-	public static function mapper()
-	{
-		$class = get_called_class();
-		if (!isset(self::$_mappers[$class])) {
-			$mapperClass = static::DEFAULT_MAPPER;
-			self::$_mappers[$class] = new $mapperClass($class);
-		}
-		return self::$_mappers[$class];
-	}
-
-	/**
-	 * Get/Create Identity Map
-	 *
-	 * @return \System\DbRecord\IdentityMap
-	 */
-	public static function identity()
-	{
-		$class = get_called_class();
-		if (!isset(self::$_identities[$class])) {
-			self::$_identities[$class] = new IdentityMap($class);
-		}
-		return self::$_identities[$class];
-	}
-
-	/**
-	 * Get/Create EntityValidator object of DbRecord / there is not use getter because of possible colision with the name of database column
-	 *
-	 * @return \System\DbRecord\EntityValidator
-	 */
-	public static function validator()
-	{
-		$class = get_called_class();
-		if (!isset(self::$_validators[$class])) {
-			$validatorClass = static::DEFAULT_VALIDATOR;
-			self::$_validators[$class] = new $validatorClass($class);
-		}
-		return self::$_validators[$class];
-	}
-
-	/**
-	 * Get global connection / there is not use getter because of possible colision with the name of database column
-	 *
-	 * @return \System\DbRecord\Connection
-	 */
-	public static function connection()
-	{
-		return self::em()->getConnection();
-	}
-
 
 
 
