@@ -189,7 +189,7 @@ class EntityMetadata
 	 * @param  string $key
 	 * @return bool
 	 */
-	public function isAssociation($key)
+	public function hasAssociation($key)
 	{
 		return isset($this->associations[$key]);
 	}

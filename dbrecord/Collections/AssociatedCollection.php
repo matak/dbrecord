@@ -7,7 +7,7 @@
 
 namespace dbrecord;
 
-class AssociatedCollection extends DbRecordCollection
+class AssociatedCollection extends EntityCollection
 {
 
 	/** @var Association  related object */

@@ -543,40 +543,48 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 			return $value;
 
 		}
+		// takova property neexistuje, mozna ze pristupujeme k dbrecord magic properties (column nebo asociace)		
 		catch(\Nette\MemberAccessException $e) {
 			$repository = self::em()->getRepository(static::class);
 			$metadata = $repository->getMetadata();
 
-			if (!$metadata->hasColumn($name)) {
-				if ($metadata->isAssociation($name)) {
-					// associace uz byla drive vytvorena, tak ji vratime
-					if (array_key_exists($name, $this->_associations)) {
-						$reference = $this->_associations[$name];
-						return $reference;
+			// je to Column
+			if ($metadata->hasColumn($name)) {
+				// data zadana, je tento column inicializovan
+				if (array_key_exists($name, $this->_data)) {
+					$value = $this->_data[$name];
+					return $value; // PHP work-around (Only variable references should be returned by reference)
+				}
+				// column nebyl inicializovan 
+				else {					
+					$defaults = $metadata->getDefaults();
+					// zkusme vratit default (column stale neinicializujeme)
+					if (array_key_exists($name, $defaults)) {
+						$value = $defaults[$name];
+						return $value; // PHP work-around (Only variable references should be returned by reference)
+					} 
+					// default neni znamy vracime NULL (neměl by se tady vratit exception? neni inicializovane tak jak na nej mohu sahat? no protoze je to definovany column tedy ta property je magic a existuje proto se vraci NULL)
+					else {
+						$value = NULL;
+						return $value;  // PHP work-around (Only variable references should be returned by reference)
 					}
-
-					// associace k tomuto objektu neexistuje, vytvorime ji
-					$reference = $this->_associations[$name] = $repository->createAssociatedObject($name, $this);
+				}
+			}
+			// je to asociace
+			elseif ($metadata->hasAssociation($name)) {
+				// associace uz byla drive vytvorena, tak ji vratime
+				if (array_key_exists($name, $this->_associations)) {
+					$reference = $this->_associations[$name];
 					return $reference;
 				}
 
-				throw $e;
+				// associace k tomuto objektu neexistuje, vytvorime ji
+				$reference = $this->_associations[$name] = $repository->createAssociatedObject($name, $this);
+				return $reference;
 			}
 
-			if (array_key_exists($name, $this->_data)) {
-				$value = $this->_data[$name];
-				return $value; // PHP work-around (Only variable references should be returned by reference)
-			}
-			else {
-				$defaults = $metadata->getDefaults();
-				if (array_key_exists($name, $defaults)) {
-					$value = $defaults[$name];
-					return $value; // PHP work-around (Only variable references should be returned by reference)
-				} else {
-					$value = NULL;
-					return $value;  // PHP work-around (Only variable references should be returned by reference)
-				}
-			}
+			// jde o chybu
+			throw $e;
 		}
 	}
 
@@ -598,14 +606,71 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 			ObjectMixin::set($this, $name, $value);
 
 		}
+		// takova property neexistuje, mozna ze pristupujeme k dbrecord magic properties (column nebo asociace)
 		catch(\Nette\MemberAccessException $e) {
 			$repository = self::em()->getRepository(static::class);
 			$metadata = $repository->getMetadata();
 
-			if (!$metadata->hasColumn($name)) {
-				if ($metadata->isAssociation($name)) {
-					throw $e;
+			// je to Column
+			if ($metadata->hasColumn($name)) {
+				// hodnoty ktere mohou byt NULL a nemaji v dtb zadnou vychozi hodnotu nebudeme ukladat jako prazdne ale jako NULL
+				// jinak by se do dtb zapsal prazdny string coz napr. u company, ico atd. nema vyznam, dokonce to i u ICO vyrazne skodi
+				//TODO: docela potencionalni bug / asi by se to melo resit jinde - napr. parametrem v konstruktoru
+				if (isset($this->_construction['nullableToNULL']) && $this->_construction['nullableToNULL'] === true) {
+					if ($value === "" && $metadata->isNullable($name) && !$metadata->isMandatory($name)) {
+						$value = NULL;
+					}
 				}
+
+				if (!is_null($value)) {
+					$type = $metadata->getType($name);
+					switch ($type) {
+						case "s":
+							$value = (string) $value;
+							// trimstrings oreze vsechny stringy funkci trim
+							if (isset($this->_construction['trimStrings']) && $this->_construction['trimStrings'] === true) {
+								$value = trim($value);
+							}
+							break;
+
+						case "i":
+							$value = (int)$value;
+							break;
+
+						case "f":
+							if (isset($this->_construction['floatReplaceDecimals']) && $this->_construction['floatReplaceDecimals'] === true) {
+								$value = preg_replace("/,/", ".", $value);
+							}
+
+							$value = (float)$value;
+							break;
+
+						case "d":
+						case "t": // z dtb vzdy dostaneme tento tvar 2010-01-01 / z formu muzeme dostat ledasco / my budeme pracovat s DateTime / pri ukladani do dtb nebo do array bychom meli ulozit string, tedy Y-m-d H:i:s
+							// povazujeme za NULL
+							if (!$value || $value == '0000-00-00 00:00:00') {
+								$value = NULL;
+							}
+							else {
+								$_value = is_numeric($value) ? (int) $value : strtotime($value); // strtotime si poradí se stringy jako 2010-01-10 12:00, 10.1.2010 12:00, now atd., tedy při vkládání formulářů máme celkem volné ruce
+								$value = new DateTime;
+								$value->setTimestamp($_value);
+							}
+							break;
+
+						default:
+							throw new \Nette\InvalidArgumentException("Undefined data type!");
+					}
+				}
+
+				if (!array_key_exists($name, $this->_data) || $this->_data[$name] !== $value) {
+					$this->_data[$name] = $value;
+					$this->_modified[$name] = true;
+				}
+				
+			}
+			// je to asociace
+			elseif ($metadata->hasAssociation($name)) {
 
 				// mame mergovat?
 				if (is_array($value) && isset($this->_construction['mergeAssociations']) && $this->_construction['mergeAssociations'] === true && isset($this->_associations[$name])) {
@@ -621,61 +686,8 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 				return;
 			}
 
-			// hodnoty ktere mohou byt NULL a nemaji v dtb zadnou vychozi hodnotu nebudeme ukladat jako prazdne ale jako NULL
-			// jinak by se do dtb zapsal prazdny string coz napr. u company, ico atd. nema vyznam, dokonce to i u ICO vyrazne skodi
-			//TODO: docela potencionalni bug / asi by se to melo resit jinde - napr. parametrem v konstruktoru
-			if (isset($this->_construction['nullableToNULL']) && $this->_construction['nullableToNULL'] === true) {
-				if ($value === "" && $metadata->isNullable($name) && !$metadata->isMandatory($name)) {
-					$value = NULL;
-				}
-			}
-
-
-			if (!is_null($value)) {
-				$type = $metadata->getType($name);
-				switch ($type) {
-					case "s":
-						$value = (string)$value;
-						// trimstrings oreze vsechny stringy funkci trim
-						if (isset($this->_construction['trimStrings']) && $this->_construction['trimStrings'] === true) {
-							$value = trim($value);
-						}
-						break;
-						
-					case "i":
-						$value = (int)$value;
-						break;
-					
-					case "f":
-						if (isset($this->_construction['floatReplaceDecimals']) && $this->_construction['floatReplaceDecimals'] === true) {
-							$value = preg_replace("/,/", ".", $value);
-						}
-
-						$value = (float)$value;
-						break;
-						
-					case "d":
-					case "t": // z dtb vzdy dostaneme tento tvar 2010-01-01 / z formu muzeme dostat ledasco / my budeme pracovat s DateTime / pri ukladani do dtb nebo do array bychom meli ulozit string, tedy Y-m-d H:i:s
-						// povazujeme za NULL
-						if (!$value || $value == '0000-00-00 00:00:00') {
-							$value = NULL;
-						}
-						else {
-							$_value = is_numeric($value) ? (int) $value : strtotime($value); // strtotime si poradí se stringy jako 2010-01-10 12:00, 10.1.2010 12:00, now atd., tedy při vkládání formulářů máme celkem volné ruce
-							$value = new DateTime;
-							$value->setTimestamp($_value);
-						}
-						break;
-
-					default:
-						throw new \Nette\InvalidArgumentException("Undefined data type!");
-				}
-			}
-
-			if (!array_key_exists($name, $this->_data) || $this->_data[$name] !== $value) {
-				$this->_data[$name] = $value;
-				$this->_modified[$name] = true;
-			}
+			// jde o chybu
+			throw $e;
 		}
 	}
 
