@@ -111,6 +111,10 @@ abstract class Entity extends FreezableObject implements \ArrayAccess, IObjectCo
 			self::$_em = $em;
 		}
 		
+		if (!self::$_em) {
+			throw new \Nette\InvalidArgumentException("EntityManager was not set!");
+		}
+		
 		return self::$_em;
 	}
 
